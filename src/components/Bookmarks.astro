@@ -40,22 +40,33 @@
   const clear = document.querySelector<HTMLButtonElement>('#clear-all')!;
   let bookmarks: Bookmark[] = [];
 
+  function withStorageLock<T>(callback: () => T | Promise<T>): Promise<T> {
+    if (!navigator.locks) {
+      return Promise.reject(new Error('This browser cannot safely synchronize bookmarks across tabs.'));
+    }
+    return navigator.locks.request(STORAGE_KEY, callback);
+  }
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    try {
-      const bookmark = { url: normalizeUrl(input.value), slug: generateSlug(bookmarks) };
-      const updated = [...bookmarks, bookmark];
+    const url = input.value;
+    void withStorageLock(() => {
+      const current = parseBookmarks(localStorage.getItem(STORAGE_KEY));
+      const bookmark = { url: normalizeUrl(url), slug: generateSlug(current) };
+      const updated = [...current, bookmark];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       bookmarks = updated;
       render();
       input.value = '';
       status.textContent = 'Bookmark saved.';
       input.focus();
-    } catch (error) {
+    }).catch((error: unknown) => {
       status.textContent = error instanceof Error && error.message.startsWith('Enter ')
         ? error.message
-        : 'Could not save your bookmark. Check that browser storage is available and try again.';
-    }
+        : error instanceof Error && error.message.startsWith('This browser')
+          ? error.message
+          : 'Could not save your bookmark. Check that browser storage is available and try again.';
+    });
   });
 
   function render() {
@@ -97,14 +108,20 @@
 
   clear.addEventListener('click', () => {
     if (!confirm('Clear all saved bookmarks?')) return;
-    try {
+    void withStorageLock(() => {
       localStorage.removeItem(STORAGE_KEY);
       bookmarks = [];
       render();
       status.textContent = 'Bookmarks cleared.';
-    } catch {
+    }).catch(() => {
       status.textContent = 'Could not clear bookmarks. Check that browser storage is available and try again.';
-    }
+    });
+  });
+
+  window.addEventListener('storage', (event) => {
+    if (event.key !== STORAGE_KEY && event.key !== null) return;
+    bookmarks = parseBookmarks(event.key === null ? null : event.newValue);
+    render();
   });
 
   try {

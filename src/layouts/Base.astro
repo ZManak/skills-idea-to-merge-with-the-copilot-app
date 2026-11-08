@@ -124,6 +124,18 @@ const { title = "Mona's Bookmark Manager App" } = Astro.props;
       .clear:hover { border-color: currentColor; }
 
       ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.5rem; }
+      .empty {
+        margin: 0;
+        padding: 1.5rem;
+        text-align: center;
+        color: var(--muted);
+        border: 1px dashed var(--border);
+        border-radius: var(--radius);
+      }
+
+      footer { margin-top: 2.5rem; font-size: 0.8rem; color: var(--muted); }
+    </style>
+    <style is:global>
       li.bookmark {
         display: flex;
         flex-wrap: wrap;
@@ -148,16 +160,6 @@ const { title = "Mona's Bookmark Manager App" } = Astro.props;
         font-size: 0.8rem;
         font-weight: 500;
       }
-      .empty {
-        margin: 0;
-        padding: 1.5rem;
-        text-align: center;
-        color: var(--muted);
-        border: 1px dashed var(--border);
-        border-radius: var(--radius);
-      }
-
-      footer { margin-top: 2.5rem; font-size: 0.8rem; color: var(--muted); }
     </style>
   </head>
   <body>
