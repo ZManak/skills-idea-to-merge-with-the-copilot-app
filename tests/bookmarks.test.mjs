@@ -6,6 +6,10 @@ test('normalizes URLs with and without https to the same value', () => {
   assert.equal(normalizeUrl('example.com'), 'https://example.com');
   assert.equal(normalizeUrl(' https://example.com '), normalizeUrl('example.com'));
   assert.equal(normalizeUrl('example.com/path?q=1'), 'https://example.com/path?q=1');
+  assert.equal(normalizeUrl('https:example.com'), 'https://example.com');
+  assert.equal(normalizeUrl('http:example.com/path'), 'http://example.com/path');
+  assert.equal(normalizeUrl('example.com:8080/path'), 'https://example.com:8080/path');
+  assert.throws(() => normalizeUrl('mailto:alice@example.com'));
   assert.throws(() => normalizeUrl('javascript://example.com'));
   assert.throws(() => normalizeUrl(''));
 });

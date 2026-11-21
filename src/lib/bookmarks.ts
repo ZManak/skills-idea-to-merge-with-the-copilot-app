@@ -10,9 +10,12 @@ export function normalizeUrl(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) throw new Error('Enter a URL to save.');
 
-  const withProtocol = /^[a-z][a-z\d+.-]*:\/\//i.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
+  const scheme = /^([a-z][a-z\d+.-]*):/i.exec(trimmed)?.[1];
+  const hasPort = /^[^/?#:]+:\d+(?:[/?#]|$)/.test(trimmed);
+  if (scheme && !hasPort && !/^https?$/i.test(scheme)) {
+    throw new Error('Enter an HTTP or HTTPS address without credentials.');
+  }
+  const withProtocol = scheme && !hasPort ? trimmed : `https://${trimmed}`;
   let url: URL;
   try {
     url = new URL(withProtocol);
