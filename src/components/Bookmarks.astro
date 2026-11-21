@@ -71,6 +71,22 @@
     }
   }
 
+  async function updateBookmarks(update: (current: Bookmark[]) => Bookmark[], clear = false) {
+    await navigator.locks.request(KEY, () => {
+      bookmarks = update(load());
+      if (clear) {
+        try {
+          localStorage.removeItem(KEY);
+        } catch {
+          /* ignore */
+        }
+      } else {
+        save(bookmarks);
+      }
+      render();
+    });
+  }
+
   function normalizeUrl(raw: string): string | null {
     const text = raw.trim();
     if (!text) return null;
@@ -130,7 +146,7 @@
     header.hidden = bookmarks.length === 0;
   }
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener('submit', async (event) => {
     event.preventDefault(); // keep this — stops the page from reloading
     const url = normalizeUrl(input.value);
     if (!url) {
@@ -139,25 +155,26 @@
       return;
     }
     input.setCustomValidity('');
-    const slug = generateSlug(new Set(bookmarks.map((b) => b.slug)));
-    bookmarks = [{ url, slug }, ...bookmarks];
-    save(bookmarks);
-    render();
+    await updateBookmarks((current) => {
+      const slug = generateSlug(new Set(current.map((b) => b.slug)));
+      return [{ url, slug }, ...current];
+    });
     form.reset();
     input.focus();
   });
 
   input.addEventListener('input', () => input.setCustomValidity(''));
 
-  clearAll.addEventListener('click', () => {
+  clearAll.addEventListener('click', async () => {
     if (!confirm('Remove all saved bookmarks?')) return;
-    bookmarks = [];
-    try {
-      localStorage.removeItem(KEY);
-    } catch {
-      /* ignore */
+    await updateBookmarks(() => [], true);
+  });
+
+  window.addEventListener('storage', (event) => {
+    if (event.key === KEY || event.key === null) {
+      bookmarks = load();
+      render();
     }
-    render();
   });
 
   render();
