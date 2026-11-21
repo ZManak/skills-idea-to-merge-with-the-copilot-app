@@ -74,7 +74,10 @@
   function normalizeUrl(raw: string): string | null {
     const text = raw.trim();
     if (!text) return null;
-    const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`;
+    const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(text)?.[1];
+    const hasPort = /^[^/?#:]+:\d+(?:[/?#]|$)/.test(text);
+    if (scheme && !hasPort && !/^https?$/i.test(scheme)) return null;
+    const candidate = scheme && !hasPort ? text : `https://${text}`;
     try {
       const u = new URL(candidate);
       return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : null;
